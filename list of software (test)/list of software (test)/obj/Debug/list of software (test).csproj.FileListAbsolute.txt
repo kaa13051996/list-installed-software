@@ -1,0 +1,6 @@
+c:\users\alisa\documents\visual studio 2015\Projects\list of software (test)\list of software (test)\bin\Debug\list of software (test).exe.config
+c:\users\alisa\documents\visual studio 2015\Projects\list of software (test)\list of software (test)\obj\Debug\list of software (test).csprojResolveAssemblyReference.cache
+c:\users\alisa\documents\visual studio 2015\Projects\list of software (test)\list of software (test)\bin\Debug\list of software (test).exe
+c:\users\alisa\documents\visual studio 2015\Projects\list of software (test)\list of software (test)\bin\Debug\list of software (test).pdb
+c:\users\alisa\documents\visual studio 2015\Projects\list of software (test)\list of software (test)\obj\Debug\list of software (test).exe
+c:\users\alisa\documents\visual studio 2015\Projects\list of software (test)\list of software (test)\obj\Debug\list of software (test).pdb

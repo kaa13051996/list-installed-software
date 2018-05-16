@@ -4,3 +4,6 @@ c:\users\alisa\documents\visual studio 2015\Projects\list of software (test)\lis
 c:\users\alisa\documents\visual studio 2015\Projects\list of software (test)\list of software (test)\bin\Debug\list of software (test).pdb
 c:\users\alisa\documents\visual studio 2015\Projects\list of software (test)\list of software (test)\obj\Debug\list of software (test).exe
 c:\users\alisa\documents\visual studio 2015\Projects\list of software (test)\list of software (test)\obj\Debug\list of software (test).pdb
+D:\study\list soft\list of software (test)\list of software (test)\bin\Debug\list of software (test).exe.config
+D:\study\list soft\list of software (test)\list of software (test)\obj\Debug\list of software (test).exe
+D:\study\list soft\list of software (test)\list of software (test)\obj\Debug\list of software (test).pdb

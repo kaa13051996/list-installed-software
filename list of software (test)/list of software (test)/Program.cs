@@ -32,24 +32,30 @@ namespace list_of_software__test_
 
             String[] names_key_HKLM = localKey[0].OpenSubKey(path_HKLM).GetSubKeyNames();
             String[] names_key_HKCU = localKey[1].OpenSubKey(path_HKCU).GetSubKeyNames();
-            String[] names_key_HKU = localKey[2].OpenSubKey(path_HKU).GetSubKeyNames();            
-            
+            String[] names_key_HKU = localKey[2].OpenSubKey(path_HKU).GetSubKeyNames();
+
             //общий список ПО
-            List<string> list_softwares = new List<string>();
+            Dictionary <string[], RegistryKey> list_softwares = new Dictionary<string[], RegistryKey>();
             
-            list_softwares.AddRange(list_software(names_key_HKLM, localKey[0], path_HKLM));
-            list_softwares.AddRange(list_software(names_key_HKCU, localKey[1], path_HKCU));
-            list_softwares.AddRange(list_software(names_key_HKU, localKey[2], path_HKU));
+            list_softwares.Add(list_software(names_key_HKLM, localKey[0], path_HKLM), localKey[0]);
+            list_softwares.Add(list_software(names_key_HKCU, localKey[1], path_HKCU), localKey[1]);
+            list_softwares.Add(list_software(names_key_HKU, localKey[2], path_HKU), localKey[2]);
 
             //удалить одинаковые имена программ
-            list_softwares = list_softwares.Distinct().ToList();
+            //list_softwares = list_softwares.Distinct().ToList();
+
+            List<string> list = list_parameters(list_softwares, path_HKLM);
 
             Console.WriteLine("\n--- All programm ---");
 
-            for (int i = 0; i < list_softwares.Count; i++)
+            foreach (KeyValuePair<string[], RegistryKey> kvp in list_softwares)
             {
-                Console.WriteLine(list_softwares[i]);
-            }           
+                foreach(var i in kvp.Key)
+                {
+                    Console.WriteLine("Key = {0}, Value = {1}",
+                    i, kvp.Value);
+                }                
+            }            
         }
 
         static void PrintKeys(RegistryKey rkey)
@@ -81,7 +87,7 @@ namespace list_of_software__test_
                 {
                     string value = localKey.OpenSubKey(path + names_dir[i]).GetValue("DisplayName").ToString();
                     //Console.WriteLine(value);
-                    list[count] = value;
+                    list[count] = names_dir[i];
                     count++;
                 }
                 catch (System.NullReferenceException)
@@ -96,6 +102,53 @@ namespace list_of_software__test_
             }
             Array.Resize(ref list, list.Length - no_display_name);
             return list;
+        }
+
+        static List<string> list_parameters(Dictionary<string[], RegistryKey> names_dir, string path)
+        {
+            List<string> mass = new List<string>();            
+            int no_parameters = 0;
+            string display_name = null, install_location = null, date_install = null;
+            foreach (var key in names_dir.Keys)
+            {
+                for (int i = 0; i < key.Length; i++)
+                {
+                    try
+                    {
+                        display_name = names_dir[key].OpenSubKey(path + key[i]).GetValue("DisplayName").ToString();
+                        mass.Add(display_name);
+                        char[] trim = { ',', '0', '\"' };
+                        if (names_dir[key].OpenSubKey(path + key[i]).GetValue("InstallLocation") == null)
+                        {
+                            install_location = names_dir[key].OpenSubKey(path + key[i]).GetValue("DisplayIcon").ToString().Trim(trim);
+                            date_install = System.IO.File.GetCreationTime(install_location).ToString();
+                        }
+                        else
+                        {
+                            if (names_dir[key].OpenSubKey(path + key[i]).GetValue("InstallLocation").ToString() == "")
+                            {
+                                install_location = names_dir[key].OpenSubKey(path + key[i]).GetValue("DisplayIcon").ToString().Trim(trim);
+                                date_install = System.IO.File.GetCreationTime(install_location).ToString();
+                            }
+                            else
+                            {
+                                install_location = names_dir[key].OpenSubKey(path + key[i]).GetValue("InstallLocation").ToString();
+                                date_install = System.IO.File.GetCreationTime(install_location).ToString();
+                            }
+                        }                       
+                        mass.Add(date_install);                        
+                    }                
+                    catch (System.NullReferenceException)
+                    {
+                        mass.Add("null");
+                    }
+                    catch (System.Exception ex)
+                    {
+                        Console.WriteLine("Error: " + ex.Message);
+                    }
+                }
+            }
+            return mass;
         }
 
         static string[] list_path()

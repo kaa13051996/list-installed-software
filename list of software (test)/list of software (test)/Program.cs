@@ -11,43 +11,28 @@ namespace list_of_software__test_
     {
         public static void Main()
         {
-            string path_HKLM = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\";
-            string path_HKCU = @"Software\Microsoft\Windows\CurrentVersion\Uninstall\";
-            string path_HKU = @".DEFAULT\Software\Microsoft\Windows\CurrentVersion\Uninstall\";
-
-            RegistryKey[] localKey = new RegistryKey[3];
+			string label_name_user = Environment.UserName.ToString();
             
-            if (Environment.Is64BitOperatingSystem)
-            {
-                localKey[0] = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64);
-                localKey[1] = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Registry64);
-                localKey[2] = RegistryKey.OpenBaseKey(RegistryHive.Users, RegistryView.Registry64);
-            }                
-            else
-            {
-                localKey[0] = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32);
-                localKey[1] = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Registry32);
-                localKey[2] = RegistryKey.OpenBaseKey(RegistryHive.Users, RegistryView.Registry32);
-            }
+            string[] path = list_path();
 
-            String[] names_key_HKLM = localKey[0].OpenSubKey(path_HKLM).GetSubKeyNames();
-            String[] names_key_HKCU = localKey[1].OpenSubKey(path_HKCU).GetSubKeyNames();
-            String[] names_key_HKU = localKey[2].OpenSubKey(path_HKU).GetSubKeyNames();
+            RegistryKey[] localKey = list_localkey();
+
+            string[][] names_key = list_names_key_path(localKey, path);
 
             //общий список ПО
             Dictionary <string[], RegistryKey> list_softwares = new Dictionary<string[], RegistryKey>();
             
-            list_softwares.Add(list_software(names_key_HKLM, localKey[0], path_HKLM), localKey[0]);
-            list_softwares.Add(list_software(names_key_HKCU, localKey[1], path_HKCU), localKey[1]);
-            list_softwares.Add(list_software(names_key_HKU, localKey[2], path_HKU), localKey[2]);
+            list_softwares.Add(list_software(names_key[0], localKey[0], path[0]), localKey[0]);
+            list_softwares.Add(list_software(names_key[1], localKey[0], path[1]), localKey[0]);
+            list_softwares.Add(list_software(names_key[2], localKey[1], path[2]), localKey[1]);
+            list_softwares.Add(list_software(names_key[3], localKey[2], path[3]), localKey[2]);
 
             //удалить одинаковые имена программ
             //list_softwares = list_softwares.Distinct().ToList();
 
-            List<string> list = list_parameters(list_softwares, path_HKLM);
+            List<string> list = list_parameters(list_softwares);
 
             Console.WriteLine("\n--- All programm ---");
-
             foreach (KeyValuePair<string[], RegistryKey> kvp in list_softwares)
             {
                 foreach(var i in kvp.Key)
@@ -55,6 +40,12 @@ namespace list_of_software__test_
                     Console.WriteLine("Key = {0}, Value = {1}",
                     i, kvp.Value);
                 }                
+            }
+
+            Console.WriteLine("\n--- Parametrs ---");
+            for(int i = 0; i < list.Count/2; i+=2)
+            {
+                Console.WriteLine("Name = {0},\t Date = {1}", list[i], list[i+1]);                
             }            
         }
 
@@ -73,7 +64,7 @@ namespace list_of_software__test_
                 icount++;                
             }
         }
-
+                
         static string[] list_software(String[] names_dir, RegistryKey localKey, string path)
         {
             //Console.WriteLine("\n--- " + path + " ---");
@@ -87,7 +78,7 @@ namespace list_of_software__test_
                 {
                     string value = localKey.OpenSubKey(path + names_dir[i]).GetValue("DisplayName").ToString();
                     //Console.WriteLine(value);
-                    list[count] = names_dir[i];
+                    list[count] = path + names_dir[i];
                     count++;
                 }
                 catch (System.NullReferenceException)
@@ -104,44 +95,22 @@ namespace list_of_software__test_
             return list;
         }
 
-        static List<string> list_parameters(Dictionary<string[], RegistryKey> names_dir, string path)
+        static List<string> list_parameters(Dictionary<string[], RegistryKey> names_dir)
         {
             List<string> mass = new List<string>();            
             int no_parameters = 0;
-            string display_name = null, install_location = null, date_install = null;
+            string display_name = null, date_install = null;
             foreach (var key in names_dir.Keys)
             {
                 for (int i = 0; i < key.Length; i++)
                 {
                     try
                     {
-                        display_name = names_dir[key].OpenSubKey(path + key[i]).GetValue("DisplayName").ToString();
-                        mass.Add(display_name);
-                        char[] trim = { ',', '0', '\"' };
-                        if (names_dir[key].OpenSubKey(path + key[i]).GetValue("InstallLocation") == null)
-                        {
-                            install_location = names_dir[key].OpenSubKey(path + key[i]).GetValue("DisplayIcon").ToString().Trim(trim);
-                            date_install = System.IO.File.GetCreationTime(install_location).ToString();
-                        }
-                        else
-                        {
-                            if (names_dir[key].OpenSubKey(path + key[i]).GetValue("InstallLocation").ToString() == "")
-                            {
-                                install_location = names_dir[key].OpenSubKey(path + key[i]).GetValue("DisplayIcon").ToString().Trim(trim);
-                                date_install = System.IO.File.GetCreationTime(install_location).ToString();
-                            }
-                            else
-                            {
-                                install_location = names_dir[key].OpenSubKey(path + key[i]).GetValue("InstallLocation").ToString();
-                                date_install = System.IO.File.GetCreationTime(install_location).ToString();
-                            }
-                        }                       
+                        display_name = names_dir[key].OpenSubKey(key[i]).GetValue("DisplayName").ToString();
+                        mass.Add(display_name);                        
+                        date_install = check_date(names_dir[key], key[i]);                                              
                         mass.Add(date_install);                        
-                    }                
-                    catch (System.NullReferenceException)
-                    {
-                        mass.Add("null");
-                    }
+                    }                   
                     catch (System.Exception ex)
                     {
                         Console.WriteLine("Error: " + ex.Message);
@@ -151,17 +120,96 @@ namespace list_of_software__test_
             return mass;
         }
 
-        static string[] list_path()
+        //проверка наличия даты
+        static string check_date(RegistryKey names_dir, string key)
         {
-            string[] list = new string[3];
+            string date_install = null, install_location = null;
 
-            //рекурсивный поиск в реестре по маске
-            //REG QUERY HKEY_USERS / s / k / c / f Uninstall | find "\Windows\CurrentVersion\Uninstall" > REESTR.LIST
-            //REG QUERY HKLM / s / k / c / f Uninstall | find "\Windows\CurrentVersion\Uninstall" >> REESTR.LIST
-            //REG QUERY HKCU / s / k / c / f Uninstall | find "\Windows\CurrentVersion\Uninstall" >> REESTR.LIST
-            //TYPE NUL > LIST.TXT
+            char[] trim = { ',', '0', '\"' };
+            try
+            {
+                if (names_dir.OpenSubKey(key).GetValue("InstallDate") == null || names_dir.OpenSubKey(key).GetValue("InstallDate").ToString() == "")
+                {
+                    //проверка InstallLocation
+                    if (names_dir.OpenSubKey(key).GetValue("InstallLocation") == null || names_dir.OpenSubKey(key).GetValue("InstallLocation").ToString() == "")
+                    {
+                        //проверка DislpayIcon
+                        if (names_dir.OpenSubKey(key).GetValue("DisplayIcon") == null || names_dir.OpenSubKey(key).GetValue("DisplayIcon").ToString() == "")
+                        {
+                            //дальнейшие проверки
+                            date_install = "null";
+                        }
+                        else
+                        {
+                            install_location = names_dir.OpenSubKey(key).GetValue("DisplayIcon").ToString().Trim(trim);
+                            date_install = (System.IO.File.GetCreationTime(install_location).ToString()).Substring(0, 10);
+                        }
+                    }
+                    else
+                    {
+                        install_location = names_dir.OpenSubKey(key).GetValue("InstallLocation").ToString();
+                        date_install = (System.IO.File.GetCreationTime(install_location).ToString()).Substring(0, 10);
+                    }
+                }
+                else
+                {
+                    date_install = names_dir.OpenSubKey(key).GetValue("InstallDate").ToString();
+                    string year = date_install.Substring(0, 4);
+                    string month = date_install.Substring(4, 2);
+                    string day = date_install.Substring(6, 2);
+                    date_install = day + "." + month + "." + year;
+                }                
+            }
+            catch (System.NullReferenceException)
+            {
+                date_install = "null";
+            }
+
+            return date_install;
+        }
+
+        //если появился новый путь
+        static string[] list_path()
+        {            
+            string path_HKLM = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\";
+            string path_HKLM_2 = @"Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\";
+            string path_HKCU = @"Software\Microsoft\Windows\CurrentVersion\Uninstall\";
+            string path_HKU = @".DEFAULT\Software\Microsoft\Windows\CurrentVersion\Uninstall\";
+
+            string[] list = { path_HKLM, path_HKLM_2, path_HKCU, path_HKU };
 
             return list;
+        }
+
+        //если появился новый путь
+        static string[][] list_names_key_path(RegistryKey[] localKey, string[] path)
+        {
+            String[] names_key_HKLM = localKey[0].OpenSubKey(path[0]).GetSubKeyNames();
+            String[] names_key_HKLM_2 = localKey[0].OpenSubKey(path[1]).GetSubKeyNames();
+            String[] names_key_HKCU = localKey[1].OpenSubKey(path[2]).GetSubKeyNames();
+            String[] names_key_HKU = localKey[2].OpenSubKey(path[3]).GetSubKeyNames();
+            string[][] list = { names_key_HKLM, names_key_HKLM_2, names_key_HKCU, names_key_HKU };            
+            return list;
+        }
+
+        //если добавилась ветка реестра
+        static RegistryKey[] list_localkey()
+        {
+            RegistryKey[] localKey = new RegistryKey[3];
+
+            if (Environment.Is64BitOperatingSystem)
+            {
+                localKey[0] = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64);
+                localKey[1] = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Registry64);
+                localKey[2] = RegistryKey.OpenBaseKey(RegistryHive.Users, RegistryView.Registry64);
+            }
+            else
+            {
+                localKey[0] = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32);
+                localKey[1] = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Registry32);
+                localKey[2] = RegistryKey.OpenBaseKey(RegistryHive.Users, RegistryView.Registry32);
+            }
+            return localKey;
         }
     }
 }

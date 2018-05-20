@@ -18,8 +18,7 @@ namespace list_soft_metro
         {
             InitializeComponent();
             string name_current_user = Environment.UserName.ToString();
-            label_name_user.Text = name_current_user;
-            
+            label_name_user.Text = name_current_user;            
             roundedPicBox.Image = get_picture_current_user(name_current_user);
             Regedit();
         }

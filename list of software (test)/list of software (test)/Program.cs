@@ -25,7 +25,7 @@ namespace list_of_software__test_
             list_softwares.Add(list_software(names_key[0], localKey[0], path[0]), localKey[0]);
             list_softwares.Add(list_software(names_key[1], localKey[0], path[1]), localKey[0]);
             list_softwares.Add(list_software(names_key[2], localKey[1], path[2]), localKey[1]);
-            list_softwares.Add(list_software(names_key[3], localKey[2], path[3]), localKey[2]);
+            //list_softwares.Add(list_software(names_key[3], localKey[2], path[3]), localKey[2]);
 
             //удалить одинаковые имена программ
             //list_softwares = list_softwares.Distinct().ToList();
@@ -187,8 +187,9 @@ namespace list_of_software__test_
             String[] names_key_HKLM = localKey[0].OpenSubKey(path[0]).GetSubKeyNames();
             String[] names_key_HKLM_2 = localKey[0].OpenSubKey(path[1]).GetSubKeyNames();
             String[] names_key_HKCU = localKey[1].OpenSubKey(path[2]).GetSubKeyNames();
-            String[] names_key_HKU = localKey[2].OpenSubKey(path[3]).GetSubKeyNames();
-            string[][] list = { names_key_HKLM, names_key_HKLM_2, names_key_HKCU, names_key_HKU };            
+            //String[] names_key_HKU = localKey[2].OpenSubKey(path[3]).GetSubKeyNames();
+            //string[][] list = { names_key_HKLM, names_key_HKLM_2, names_key_HKCU, names_key_HKU };
+            string[][] list = { names_key_HKLM, names_key_HKLM_2, names_key_HKCU};
             return list;
         }
 

@@ -12,7 +12,7 @@ namespace list_of_software__test_
         public static void Main()
         {
 			string label_name_user = Environment.UserName.ToString();
-            
+
             string[] path = list_path();
 
             RegistryKey[] localKey = list_localkey();
@@ -20,33 +20,32 @@ namespace list_of_software__test_
             string[][] names_key = list_names_key_path(localKey, path);
 
             //общий список ПО
-            Dictionary <string[], RegistryKey> list_softwares = new Dictionary<string[], RegistryKey>();
-            
-            list_softwares.Add(list_software(names_key[0], localKey[0], path[0]), localKey[0]);
-            list_softwares.Add(list_software(names_key[1], localKey[0], path[1]), localKey[0]);
-            list_softwares.Add(list_software(names_key[2], localKey[1], path[2]), localKey[1]);
-            //list_softwares.Add(list_software(names_key[3], localKey[2], path[3]), localKey[2]);
+            Dictionary<string[], RegistryKey> list_softwares = new Dictionary<string[], RegistryKey>();
+            for (int i = 0; i < localKey.Count(); i++) list_softwares.Add(list_software(names_key[i], localKey[i], path[i]), localKey[i]);
 
             //удалить одинаковые имена программ
             //list_softwares = list_softwares.Distinct().ToList();
 
             List<string> list = list_parameters(list_softwares);
-
-            Console.WriteLine("\n--- All programm ---");
-            foreach (KeyValuePair<string[], RegistryKey> kvp in list_softwares)
+            if (list.Count == 0) Console.WriteLine("Программ в заданных ветках реестра не обнаружено!");
+            else
             {
-                foreach(var i in kvp.Key)
+                Console.WriteLine("\n--- All programm ---");
+                //foreach (KeyValuePair<string[], RegistryKey> kvp in list_softwares)
+                //{
+                //    foreach (var i in kvp.Key)
+                //    {
+                //        Console.WriteLine("Key = {0}, Value = {1}",
+                //        i, kvp.Value);
+                //    }
+                //}
+
+                //Console.WriteLine("\n--- Parametrs ---");
+                for (int i = 0; i < list.Count / 2; i += 2)
                 {
-                    Console.WriteLine("Key = {0}, Value = {1}",
-                    i, kvp.Value);
-                }                
-            }
-
-            Console.WriteLine("\n--- Parametrs ---");
-            for(int i = 0; i < list.Count/2; i+=2)
-            {
-                Console.WriteLine("Name = {0},\t Date = {1}", list[i], list[i+1]);                
-            }            
+                    Console.WriteLine("Name = {0},\t Date = {1}", list[i], list[i + 1]);
+                }
+            }                       
         }
 
         static void PrintKeys(RegistryKey rkey)
@@ -184,31 +183,46 @@ namespace list_of_software__test_
         //если появился новый путь
         static string[][] list_names_key_path(RegistryKey[] localKey, string[] path)
         {
-            String[] names_key_HKLM = localKey[0].OpenSubKey(path[0]).GetSubKeyNames();
-            String[] names_key_HKLM_2 = localKey[0].OpenSubKey(path[1]).GetSubKeyNames();
-            String[] names_key_HKCU = localKey[1].OpenSubKey(path[2]).GetSubKeyNames();
-            //String[] names_key_HKU = localKey[2].OpenSubKey(path[3]).GetSubKeyNames();
-            //string[][] list = { names_key_HKLM, names_key_HKLM_2, names_key_HKCU, names_key_HKU };
-            string[][] list = { names_key_HKLM, names_key_HKLM_2, names_key_HKCU};
+            int count_localKey = localKey.Count();
+            string error = null;
+            string[][] list = new string[count_localKey][];
+            int current = 0;
+            for (int i = 0; i < count_localKey; i++)
+            {
+                try
+                {
+                    list[i] = localKey[i].OpenSubKey(path[i]).GetSubKeyNames();
+                }
+                catch (Exception ex)
+                {
+                    error += localKey[i] + path[i] + "\n";
+                    list[i] = new string[0];
+                }
+                //current++;
+            }
+            if (!String.IsNullOrEmpty(error)) Console.Write("Такой ветки(-ок) в вашем реестре не существует:\n" + error);
+            
             return list;
         }
 
         //если добавилась ветка реестра
         static RegistryKey[] list_localkey()
         {
-            RegistryKey[] localKey = new RegistryKey[3];
+            RegistryKey[] localKey = new RegistryKey[4];
 
             if (Environment.Is64BitOperatingSystem)
             {
                 localKey[0] = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64);
-                localKey[1] = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Registry64);
-                localKey[2] = RegistryKey.OpenBaseKey(RegistryHive.Users, RegistryView.Registry64);
+                localKey[1] = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64);
+                localKey[2] = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Registry64);
+                localKey[3] = RegistryKey.OpenBaseKey(RegistryHive.Users, RegistryView.Registry64);
             }
             else
             {
                 localKey[0] = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32);
-                localKey[1] = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Registry32);
-                localKey[2] = RegistryKey.OpenBaseKey(RegistryHive.Users, RegistryView.Registry32);
+                localKey[1] = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32);
+                localKey[2] = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Registry32);
+                localKey[3] = RegistryKey.OpenBaseKey(RegistryHive.Users, RegistryView.Registry32);
             }
             return localKey;
         }

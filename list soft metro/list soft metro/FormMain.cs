@@ -33,16 +33,13 @@ namespace list_soft_metro
 
             //общий список ПО
             Dictionary<string[], RegistryKey> list_softwares = new Dictionary<string[], RegistryKey>();
-
-            list_softwares.Add(list_software(names_key[0], localKey[0], path[0]), localKey[0]);
-            list_softwares.Add(list_software(names_key[1], localKey[0], path[1]), localKey[0]);
-            list_softwares.Add(list_software(names_key[2], localKey[1], path[2]), localKey[1]);
-            //list_softwares.Add(list_software(names_key[3], localKey[2], path[3]), localKey[2]);
-
+            for (int i = 0; i < localKey.Count(); i++) list_softwares.Add(list_software(names_key[i], localKey[i], path[i]), localKey[i]);
+            
             //удалить одинаковые имена программ
             //list_softwares = list_softwares.Distinct().ToList();
 
             List<string> list = list_parameters(list_softwares);
+            if (list.Count == 0) MessageBox.Show("Программ в заданных ветках реестра не обнаружено!", "Пусто!", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
             cout_db(list);
 
         }
@@ -56,7 +53,8 @@ namespace list_soft_metro
             {
                 try
                 {
-                    string value = localKey.OpenSubKey(path + names_dir[i]).GetValue("DisplayName").ToString();                    
+                    string value = localKey.OpenSubKey(path + names_dir[i]).GetValue("DisplayName").ToString();
+                    if (value == "") throw new System.NullReferenceException();       
                     list[count] = path + names_dir[i];
                     count++;
                 }
@@ -153,40 +151,55 @@ namespace list_soft_metro
             string path_HKLM_2 = @"Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\";
             string path_HKCU = @"Software\Microsoft\Windows\CurrentVersion\Uninstall\";
             string path_HKU = @".DEFAULT\Software\Microsoft\Windows\CurrentVersion\Uninstall\";
-
             string[] list = { path_HKLM, path_HKLM_2, path_HKCU, path_HKU };
-
             return list;
         }
 
         //если появился новый путь
         static string[][] list_names_key_path(RegistryKey[] localKey, string[] path)
         {
-            String[] names_key_HKLM = localKey[0].OpenSubKey(path[0]).GetSubKeyNames();
-            String[] names_key_HKLM_2 = localKey[0].OpenSubKey(path[1]).GetSubKeyNames();
-            String[] names_key_HKCU = localKey[1].OpenSubKey(path[2]).GetSubKeyNames();
+            int count_localKey = localKey.Count();
+            string error = null;
+            string[][] list = new string[count_localKey][];
+            int current = 0;
+            for (int i = 0; i < count_localKey; i++)
+            {
+                try
+                {                    
+                    list[i] = localKey[i].OpenSubKey(path[i]).GetSubKeyNames();                    
+                }
+                catch (Exception ex)
+                {
+                    error += localKey[i] + path[i] + "\n";                    
+                    list[i] = new string[0];
+                }
+                //current++;
+            }
+            if (!String.IsNullOrEmpty(error)) MessageBox.Show("Такой ветки(-ок) в вашем реестре не существует:\n" + error, "Предупреждение!", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             //String[] names_key_HKU = localKey[2].OpenSubKey(path[3]).GetSubKeyNames();
             //string[][] list = { names_key_HKLM, names_key_HKLM_2, names_key_HKCU, names_key_HKU };
-            string[][] list = { names_key_HKLM, names_key_HKLM_2, names_key_HKCU};
+            //Array.Resize(ref list, current);
             return list;
         }
 
         //если добавилась ветка реестра
         static RegistryKey[] list_localkey()
         {
-            RegistryKey[] localKey = new RegistryKey[3];
+            RegistryKey[] localKey = new RegistryKey[4];
 
             if (Environment.Is64BitOperatingSystem)
             {
                 localKey[0] = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64);
-                localKey[1] = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Registry64);
-                localKey[2] = RegistryKey.OpenBaseKey(RegistryHive.Users, RegistryView.Registry64);
+                localKey[1] = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64);
+                localKey[2] = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Registry64);
+                localKey[3] = RegistryKey.OpenBaseKey(RegistryHive.Users, RegistryView.Registry64);
             }
             else
             {
                 localKey[0] = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32);
-                localKey[1] = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Registry32);
-                localKey[2] = RegistryKey.OpenBaseKey(RegistryHive.Users, RegistryView.Registry32);
+                localKey[1] = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32);
+                localKey[2] = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Registry32);
+                localKey[3] = RegistryKey.OpenBaseKey(RegistryHive.Users, RegistryView.Registry32);
             }
             return localKey;
         }
@@ -194,15 +207,35 @@ namespace list_soft_metro
         void cout_db(List<string> mass)
         {
             dataGridView.RowHeadersVisible = false;
-            dataGridView.RowCount = mass.Count / 2;
-            dataGridView.ColumnCount = 2;
+            //dataGridView.RowCount = mass.Count / 2;
+            //dataGridView.ColumnCount = 2;
             int count = 0;
-            for (int i = 0; i < dataGridView.RowCount; i++)
+            //for (int i = 0; i < dataGridView.RowCount; i++)
+            //{
+            //    dataGridView.Rows[i].Cells[0].Value = mass[count];
+            //    dataGridView.Rows[i].Cells[1].Value = mass[count + 1]; 
+            //    count += 2;
+            //}
+            //count = 0;
+            DataTable dt = new DataTable();            
+            dt.Columns.AddRange(new DataColumn[]{
+                new DataColumn("name", typeof(string)),
+                new DataColumn("install date", typeof(DateTime))
+            });
+            for (int i = 0; i < mass.Count / 2; i++)
             {
-                dataGridView.Rows[i].Cells[0].Value = mass[count];
-                dataGridView.Rows[i].Cells[1].Value = mass[count + 1];
+                DataRow row = dt.NewRow();
+                if (mass[count + 1] == "null") row.ItemArray = new object[] { mass[count], Convert.ToDateTime(null) };
+                else row.ItemArray = new object[] { mass[count], Convert.ToDateTime(mass[count + 1])};
+                dt.Rows.Add(row);               
                 count += 2;
             }
+            dataGridView.DataSource = dt;
+            dataGridView.ClearSelection();
+            dataGridView.EnableHeadersVisualStyles = false;
+            //dataGridView.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(107, 210, 242);
+            dataGridView.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(255, 255, 255);
+            dataGridView.ColumnHeadersDefaultCellStyle.Font = new Font("Century Gothic", 8); 
         }
 
         public static Bitmap get_picture_current_user(string name)
@@ -291,5 +324,22 @@ namespace list_soft_metro
             return bitmapImage;
         }
 
+        private void dataGridView_Click(object sender, EventArgs e)
+        {
+            dataGridView.DefaultCellStyle.SelectionBackColor = Color.WhiteSmoke;
+            dataGridView.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+        }
+
+        private void button_info_Click(object sender, EventArgs e)
+        {
+            dataGridView.Visible = false;
+            textBox_info.Visible = true;            
+        }
+
+        private void button_main_Click(object sender, EventArgs e)
+        {
+            dataGridView.Visible = true;
+            textBox_info.Visible = false;
+        }
     }
 }

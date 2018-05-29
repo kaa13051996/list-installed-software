@@ -45,7 +45,8 @@ namespace list_of_software__test_
                 {
                     Console.WriteLine("Name = {0},\t Date = {1}", list[i], list[i + 1]);
                 }
-            }                       
+            }
+            Console.ReadKey();
         }
 
         static void PrintKeys(RegistryKey rkey)

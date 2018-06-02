@@ -123,7 +123,7 @@ namespace list_soft_metro
                     }
                     else
                     {
-                        install_location = names_dir.OpenSubKey(key).GetValue("InstallLocation").ToString();
+                        install_location = names_dir.OpenSubKey(key).GetValue("InstallLocation").ToString().Trim(trim);
                         date_install = (System.IO.File.GetCreationTime(install_location).ToString()).Substring(0, 10);
                     }
                 }
@@ -139,6 +139,7 @@ namespace list_soft_metro
             catch (System.NullReferenceException)
             {
                 date_install = "null";
+                return date_install;
             }
 
             return date_install;

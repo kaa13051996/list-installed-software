@@ -1,4 +1,4 @@
-﻿using Microsoft.Win32;
+using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -90,6 +90,8 @@ namespace list_soft_metro
                     catch (System.Exception ex)
                     {
                         Console.WriteLine("Error: " + ex.Message);
+                        date_install = "null";
+                        mass.Add(date_install);
                     }
                 }
             }
@@ -227,7 +229,17 @@ namespace list_soft_metro
             {
                 DataRow row = dt.NewRow();
                 if (mass[count + 1] == "null") row.ItemArray = new object[] { mass[count], Convert.ToDateTime(null) };
-                else row.ItemArray = new object[] { mass[count], Convert.ToDateTime(mass[count + 1])};
+                else
+                {
+                    try
+                    {
+                        row.ItemArray = new object[] { mass[count], Convert.ToDateTime(mass[count + 1]) };
+                    }
+                    catch
+                    {
+                        row.ItemArray = new object[] { mass[count], Convert.ToDateTime(null) };
+                    }
+                }
                 dt.Rows.Add(row);               
                 count += 2;
             }
@@ -334,7 +346,7 @@ namespace list_soft_metro
         private void button_info_Click(object sender, EventArgs e)
         {
             dataGridView.Visible = false;
-            textBox_info.Visible = true;            
+            textBox_info.Visible = true;      
         }
 
         private void button_main_Click(object sender, EventArgs e)

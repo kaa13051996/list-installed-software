@@ -345,14 +345,29 @@ namespace list_soft_metro
 
         private void button_info_Click(object sender, EventArgs e)
         {
-            dataGridView.Visible = false;
-            textBox_info.Visible = true;      
+            string info = @"Программа 'ListSoft' предназначена для просмотра списка установленного ПО. 
+Разработчик: студент 724 группы, Крупина А.А. 
+Год создания:2018. 
+Кнопка 'main' вернет Вас в главное меню. Некоторые моменты:
+    -если столбец даты пуст, то это значит, что в реестре не нашлось информации, которую можно было бы использовать;
+    -если каких - то веток реестра нет, то программа будет исправно работать с тем, что есть;
+    -если все необходимые ветки реестра отсутствуют, то это странно, поэтому напишите на почту example @gmail.com.";            
+            textBox_info.Visible = true;
+            panel_search.Visible = false;
+            panel_info.Visible = false;
+            textBox_info.Text = info;
+        }           
+
+        private void textBox_search_TextChanged(object sender, EventArgs e)
+        {
+            (dataGridView.DataSource as DataTable).DefaultView.RowFilter = String.Format("Name like '{0}%'", textBox_search.Text);
         }
 
         private void button_main_Click(object sender, EventArgs e)
         {
-            dataGridView.Visible = true;
             textBox_info.Visible = false;
+            panel_search.Visible = true;
+            panel_info.Visible = true;
         }
     }
 }

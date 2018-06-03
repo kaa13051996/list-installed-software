@@ -28,13 +28,14 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FormMain));
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FormMain));
             this.panel_user = new System.Windows.Forms.Panel();
             this.panel1 = new System.Windows.Forms.Panel();
             this.label_name_user = new System.Windows.Forms.Label();
             this.panel_image = new System.Windows.Forms.Panel();
+            this.roundedPicBox = new list_soft_metro.RoundedPicBox();
             this.button_main = new System.Windows.Forms.Button();
             this.panel_head = new System.Windows.Forms.Panel();
             this.button_info = new System.Windows.Forms.Button();
@@ -45,15 +46,14 @@
             this.label_name = new System.Windows.Forms.Label();
             this.panel_search = new System.Windows.Forms.Panel();
             this.textBox_info = new System.Windows.Forms.TextBox();
-            this.roundedPicBox = new list_soft_metro.RoundedPicBox();
             this.panel_user.SuspendLayout();
             this.panel1.SuspendLayout();
             this.panel_image.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.roundedPicBox)).BeginInit();
             this.panel_head.SuspendLayout();
             this.panel_info.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView)).BeginInit();
             this.panel_search.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.roundedPicBox)).BeginInit();
             this.SuspendLayout();
             // 
             // panel_user
@@ -97,6 +97,17 @@
             this.panel_image.Name = "panel_image";
             this.panel_image.Size = new System.Drawing.Size(89, 68);
             this.panel_image.TabIndex = 3;
+            // 
+            // roundedPicBox
+            // 
+            this.roundedPicBox.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)));
+            this.roundedPicBox.InitialImage = ((System.Drawing.Image)(resources.GetObject("roundedPicBox.InitialImage")));
+            this.roundedPicBox.Location = new System.Drawing.Point(12, 2);
+            this.roundedPicBox.Name = "roundedPicBox";
+            this.roundedPicBox.Size = new System.Drawing.Size(66, 64);
+            this.roundedPicBox.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
+            this.roundedPicBox.TabIndex = 2;
+            this.roundedPicBox.TabStop = false;
             // 
             // button_main
             // 
@@ -263,17 +274,6 @@
             this.textBox_info.Text = "text";
             this.textBox_info.Visible = false;
             // 
-            // roundedPicBox
-            // 
-            this.roundedPicBox.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)));
-            this.roundedPicBox.InitialImage = ((System.Drawing.Image)(resources.GetObject("roundedPicBox.InitialImage")));
-            this.roundedPicBox.Location = new System.Drawing.Point(12, 2);
-            this.roundedPicBox.Name = "roundedPicBox";
-            this.roundedPicBox.Size = new System.Drawing.Size(66, 64);
-            this.roundedPicBox.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
-            this.roundedPicBox.TabIndex = 2;
-            this.roundedPicBox.TabStop = false;
-            // 
             // FormMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
@@ -297,12 +297,12 @@
             this.panel1.ResumeLayout(false);
             this.panel1.PerformLayout();
             this.panel_image.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.roundedPicBox)).EndInit();
             this.panel_head.ResumeLayout(false);
             this.panel_info.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView)).EndInit();
             this.panel_search.ResumeLayout(false);
             this.panel_search.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.roundedPicBox)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 

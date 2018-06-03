@@ -34,12 +34,12 @@ namespace list_soft_metro
             //общий список ПО
             Dictionary<string[], RegistryKey> list_softwares = new Dictionary<string[], RegistryKey>();
             for (int i = 0; i < localKey.Count(); i++) list_softwares.Add(list_software(names_key[i], localKey[i], path[i]), localKey[i]);
-            
+
             //удалить одинаковые имена программ
             //list_softwares = list_softwares.Distinct().ToList();
-
-            List<string> list = list_parameters(list_softwares);
-            if (list.Count == 0) MessageBox.Show("Программ в заданных ветках реестра не обнаружено!", "Пусто!", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+            Dictionary<string, string> list = list_parameters(list_softwares);
+            //List<string> list = list_parameters(list_softwares);
+            if (list.Count == 0) MessageBox.Show("Программ в заданных ветках реестра не обнаружено!", "Пусто!", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);            
             cout_db(list);
 
         }
@@ -71,9 +71,10 @@ namespace list_soft_metro
             return list;
         }
 
-        static List<string> list_parameters(Dictionary<string[], RegistryKey> names_dir)
+        static Dictionary<string, string> list_parameters(Dictionary<string[], RegistryKey> names_dir)
         {
-            List<string> mass = new List<string>();
+            //List<string> mass = new List<string>();
+            Dictionary<string, string> mass = new Dictionary<string, string>();
             int no_parameters = 0;
             string display_name = null, date_install = null;
             foreach (var key in names_dir.Keys)
@@ -83,15 +84,17 @@ namespace list_soft_metro
                     try
                     {
                         display_name = names_dir[key].OpenSubKey(key[i]).GetValue("DisplayName").ToString();
-                        mass.Add(display_name);
+                        //mass.Add(display_name);                        
                         date_install = check_date(names_dir[key], key[i]);
-                        mass.Add(date_install);
+                        //mass.Add(date_install);
+                        mass[display_name] = date_install;
                     }
                     catch (System.Exception ex)
                     {
                         Console.WriteLine("Error: " + ex.Message);
                         date_install = "null";
-                        mass.Add(date_install);
+                        //mass.Add(date_install);
+                        mass[display_name] = date_install;
                     }
                 }
             }
@@ -207,41 +210,31 @@ namespace list_soft_metro
             return localKey;
         }
 
-        void cout_db(List<string> mass)
+        void cout_db(Dictionary<string, string> mass)
         {
-            dataGridView.RowHeadersVisible = false;
-            //dataGridView.RowCount = mass.Count / 2;
-            //dataGridView.ColumnCount = 2;
-            int count = 0;
-            //for (int i = 0; i < dataGridView.RowCount; i++)
-            //{
-            //    dataGridView.Rows[i].Cells[0].Value = mass[count];
-            //    dataGridView.Rows[i].Cells[1].Value = mass[count + 1]; 
-            //    count += 2;
-            //}
-            //count = 0;
+            dataGridView.RowHeadersVisible = false;   
             DataTable dt = new DataTable();            
             dt.Columns.AddRange(new DataColumn[]{
                 new DataColumn("name", typeof(string)),
                 new DataColumn("install date", typeof(DateTime))
-            });
-            for (int i = 0; i < mass.Count / 2; i++)
+            });        
+
+            foreach (var pair in mass)
             {
                 DataRow row = dt.NewRow();
-                if (mass[count + 1] == "null") row.ItemArray = new object[] { mass[count], Convert.ToDateTime(null) };
+                if (pair.Value == "null") row.ItemArray = new object[] { pair.Key, Convert.ToDateTime(null) };
                 else
                 {
                     try
                     {
-                        row.ItemArray = new object[] { mass[count], Convert.ToDateTime(mass[count + 1]) };
+                        row.ItemArray = new object[] { pair.Key, Convert.ToDateTime(pair.Value) };
                     }
                     catch
                     {
-                        row.ItemArray = new object[] { mass[count], Convert.ToDateTime(null) };
+                        row.ItemArray = new object[] { pair.Key, Convert.ToDateTime(null) };
                     }
                 }
-                dt.Rows.Add(row);               
-                count += 2;
+                dt.Rows.Add(row);
             }
             dataGridView.DataSource = dt;
             dataGridView.ClearSelection();

@@ -4,18 +4,22 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Win32;
+using System.Security.Principal;
+using System.Threading;
 
 namespace list_of_software__test_
 {
     class Reg
-    {
+    {        
         public static void Main()
         {
 			string label_name_user = Environment.UserName.ToString();
 
-            string[] path = list_path();
+            bool admin = check_admin();
 
-            RegistryKey[] localKey = list_localkey();
+            string[] path = list_path(admin);
+
+            RegistryKey[] localKey = list_localkey(admin);
 
             string[][] names_key = list_names_key_path(localKey, path);
 
@@ -30,39 +34,33 @@ namespace list_of_software__test_
             if (list.Count == 0) Console.WriteLine("Программ в заданных ветках реестра не обнаружено!");
             else
             {
-                Console.WriteLine("\n--- All programm ---");
-                //foreach (KeyValuePair<string[], RegistryKey> kvp in list_softwares)
-                //{
-                //    foreach (var i in kvp.Key)
-                //    {
-                //        Console.WriteLine("Key = {0}, Value = {1}",
-                //        i, kvp.Value);
-                //    }
-                //}
-
-                //Console.WriteLine("\n--- Parametrs ---");
-                for (int i = 0; i < list.Count / 2; i += 2)
+                Console.WriteLine("\n--- All programm ---");                
+                for (int i = 0; i < list.Count; i += 2)
                 {
-                    Console.WriteLine("Name = {0},\t Date = {1}", list[i], list[i + 1]);
+                    Console.WriteLine("#{0}, \t 442-Name = {1},\t Date = {2}", i, list[i], list[i + 1]);
                 }
             }
             Console.ReadKey();
-        }
+        }       
 
-        static void PrintKeys(RegistryKey rkey)
+        static bool check_admin()
         {
-            String[] names = rkey.GetSubKeyNames();
+            bool admin = false;
 
-            int icount = 0;
+            WindowsIdentity windowsIdentity = WindowsIdentity.GetCurrent();
+            IdentityReferenceCollection group_current_user = windowsIdentity.Groups;
+            string userName = windowsIdentity.Name;
+            string sid_admin = "S-1-5-32-544";
 
-            Console.WriteLine("Subkeys of " + rkey.Name);
-            Console.WriteLine("-----------------------------------------------");
-            
-            foreach (String s in names)
+            foreach (IdentityReference ir in group_current_user)
             {
-                Console.WriteLine(s);               
-                icount++;                
+                if (ir.Value == sid_admin) admin = true;
             }
+
+            if (admin == true) Console.WriteLine("Name = {0}, Role = {1}.", userName, new SecurityIdentifier(sid_admin).Translate(typeof(NTAccount)).Value);
+            else Console.WriteLine("Name = {0}, Role = {1}.", userName, "Не админ");
+
+            return admin;
         }
                 
         static string[] list_software(String[] names_dir, RegistryKey localKey, string path)
@@ -170,25 +168,30 @@ namespace list_of_software__test_
         }
 
         //если появился новый путь
-        static string[] list_path()
+        static string[] list_path(bool admin)
         {            
-            string path_HKLM = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\";
-            string path_HKLM_2 = @"Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\";
-            string path_HKCU = @"Software\Microsoft\Windows\CurrentVersion\Uninstall\";
-            string path_HKU = @".DEFAULT\Software\Microsoft\Windows\CurrentVersion\Uninstall\";
-
-            string[] list = { path_HKLM, path_HKLM_2, path_HKCU, path_HKU };
-
-            return list;
+            if (admin == true)
+            {
+                string path_HKLM = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\";
+                string path_HKLM_2 = @"Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\";
+                string path_HKCU = @"Software\Microsoft\Windows\CurrentVersion\Uninstall\";                
+                string path_HKU = @".DEFAULT\Software\Microsoft\Windows\CurrentVersion\Uninstall\";
+                string[] list = { path_HKLM, path_HKLM_2, path_HKCU, path_HKU };
+                return list;
+            }
+            else
+            {                
+                string path_HKCU = @"Software\Microsoft\Windows\CurrentVersion\Uninstall\";                
+                string[] list = { path_HKCU};
+                return list;
+            }    
         }
-
-        //если появился новый путь
+                
         static string[][] list_names_key_path(RegistryKey[] localKey, string[] path)
         {
             int count_localKey = localKey.Count();
             string error = null;
-            string[][] list = new string[count_localKey][];
-            int current = 0;
+            string[][] list = new string[count_localKey][];            
             for (int i = 0; i < count_localKey; i++)
             {
                 try
@@ -199,8 +202,7 @@ namespace list_of_software__test_
                 {
                     error += localKey[i] + path[i] + "\n";
                     list[i] = new string[0];
-                }
-                //current++;
+                }                
             }
             if (!String.IsNullOrEmpty(error)) Console.Write("Такой ветки(-ок) в вашем реестре не существует:\n" + error);
             
@@ -208,25 +210,42 @@ namespace list_of_software__test_
         }
 
         //если добавилась ветка реестра
-        static RegistryKey[] list_localkey()
+        static RegistryKey[] list_localkey(bool admin)
         {
-            RegistryKey[] localKey = new RegistryKey[4];
-
-            if (Environment.Is64BitOperatingSystem)
+            if (admin == true)
             {
-                localKey[0] = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64);
-                localKey[1] = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64);
-                localKey[2] = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Registry64);
-                localKey[3] = RegistryKey.OpenBaseKey(RegistryHive.Users, RegistryView.Registry64);
+                RegistryKey[] localKey = new RegistryKey[4];
+
+                if (Environment.Is64BitOperatingSystem)
+                {
+                    localKey[0] = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64);
+                    localKey[1] = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64);
+                    localKey[2] = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Registry64);
+                    localKey[3] = RegistryKey.OpenBaseKey(RegistryHive.Users, RegistryView.Registry64);
+                }
+                else
+                {
+                    localKey[0] = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32);
+                    localKey[1] = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32);
+                    localKey[2] = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Registry32);
+                    localKey[3] = RegistryKey.OpenBaseKey(RegistryHive.Users, RegistryView.Registry32);
+                }
+                return localKey;
             }
             else
             {
-                localKey[0] = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32);
-                localKey[1] = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32);
-                localKey[2] = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Registry32);
-                localKey[3] = RegistryKey.OpenBaseKey(RegistryHive.Users, RegistryView.Registry32);
-            }
-            return localKey;
+                RegistryKey[] localKey = new RegistryKey[1];
+
+                if (Environment.Is64BitOperatingSystem)
+                {
+                    localKey[0] = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Registry64);                    
+                }
+                else
+                {                    
+                    localKey[0] = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Registry32);                    
+                }
+                return localKey;
+            }            
         }
     }
 }

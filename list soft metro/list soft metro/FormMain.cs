@@ -3,9 +3,11 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Management;
 using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,21 +15,25 @@ using System.Windows.Forms;
 
 namespace list_soft_metro
 {
-    public partial class FormMain : MetroFramework.Forms.MetroForm
+    public partial class FormMain : Form
     {
+        Dictionary<string, string> black_list;
+
         public FormMain()
         {
             InitializeComponent();
             string name_current_user = Environment.UserName.ToString();
             label_name_user.Text = name_current_user;            
-            roundedPicBox.Image = get_picture_current_user(name_current_user);
+            roundedPicBox.Image = get_picture_current_user(name_current_user);            
             Regedit();
         }
         
         public void Regedit()
         {            
             bool admin = check_admin();
-            if (admin == true) label_name_user.Text += " Admin";
+            if (admin == true) label_role.Text = "(admin)";
+            if (admin == true) button_admin.Visible = true;
+            else button_admin.Visible = false;
             string[] path = list_path(admin);
             RegistryKey[] localKey = list_localkey(admin);            
 
@@ -37,10 +43,16 @@ namespace list_soft_metro
             Dictionary<string[], RegistryKey> list_softwares = new Dictionary<string[], RegistryKey>();
             for (int i = 0; i < localKey.Count(); i++) list_softwares.Add(list_software(names_key[i], localKey[i], path[i]), localKey[i]);
                         
-            Dictionary<string, string> list = list_parameters(list_softwares);            
-            if (list.Count == 0) MessageBox.Show("Программ в заданных ветках реестра не обнаружено!", "Пусто!", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);            
-            cout_db(list);
-        }
+            Dictionary<string, string> list_date = list_parameters(list_softwares);         
+            if (list_date.Count == 0) MessageBox.Show("Программ в заданных ветках реестра не обнаружено!", "Пусто!", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+
+            string[] read_black_list = generate_black_list();
+            cout_db(list_date, list_softwares, read_black_list);
+
+            black_list = list_parameters(list_softwares, read_black_list);
+            if (black_list.Count == 0) MessageBox.Show("Программ из черного списка обнаружено не было.", "Информация!", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            else {MessageBox.Show("Найдено " + black_list.Count + " программ из черного списка.", "Предупреждение!", MessageBoxButtons.OK, MessageBoxIcon.Information); cout_bl(black_list);}  
+         }
 
         static bool check_admin()
         {
@@ -115,6 +127,35 @@ namespace list_soft_metro
             return mass;
         }
 
+        static Dictionary<string, string> list_parameters(Dictionary<string[], RegistryKey> names_dir, string[] black_list)
+        {
+            //List<string> mass = new List<string>();
+            Dictionary<string, string> mass = new Dictionary<string, string>();
+            string display_name = null, unistall_string = null;
+            foreach (var key in names_dir.Keys)
+            {
+                for (int i = 0; i < key.Length; i++)
+                {
+                    try
+                    {
+                        display_name = names_dir[key].OpenSubKey(key[i]).GetValue("DisplayName").ToString();
+                        if (check_black_list(display_name, black_list) == true)
+                        {
+                            unistall_string = check_unistall(names_dir[key], key[i]);
+                            mass[display_name] = unistall_string;
+                        }               
+                    }
+                    catch (System.Exception ex)
+                    {
+                        Console.WriteLine("Error: " + ex.Message);
+                        unistall_string = "null";                        
+                        mass[display_name] = unistall_string;
+                    }
+                }
+            }
+            return mass;
+        }
+
         //проверка наличия даты
         static string check_date(RegistryKey names_dir, string key)
         {
@@ -162,6 +203,29 @@ namespace list_soft_metro
             }
 
             return date_install;
+        }
+
+        //проверка наличия строки удаления
+        static string check_unistall(RegistryKey names_dir, string key)
+        {
+            string unistall_string = null;
+            try
+            {
+                if (names_dir.OpenSubKey(key).GetValue("UninstallString") == null || names_dir.OpenSubKey(key).GetValue("UninstallString").ToString() == "")
+                {                    
+                    unistall_string = "null";
+                }
+                else
+                {
+                    unistall_string = names_dir.OpenSubKey(key).GetValue("UninstallString").ToString();
+                }
+            }
+            catch (System.NullReferenceException)
+            {
+                unistall_string = "null";
+                return unistall_string;
+            }
+            return unistall_string;
         }
 
         //если появился новый путь
@@ -249,39 +313,80 @@ namespace list_soft_metro
             }
         }
 
-        void cout_db(Dictionary<string, string> mass)
+        void cout_db(Dictionary<string, string> mass, Dictionary<string[], RegistryKey> list_softwares, string[] black_list)
         {
-            dataGridView.RowHeadersVisible = false;   
+            Dictionary<Dictionary<string[], RegistryKey>, string> black_program_dict = new Dictionary<Dictionary<string[], RegistryKey>, string>();
+            dataGridView.RowHeadersVisible = false;              
             DataTable dt = new DataTable();            
             dt.Columns.AddRange(new DataColumn[]{
                 new DataColumn("name", typeof(string)),
                 new DataColumn("install date", typeof(DateTime))
-            });        
-
+            });
             foreach (var pair in mass)
             {
                 DataRow row = dt.NewRow();
-                if (pair.Value == "null") row.ItemArray = new object[] { pair.Key, Convert.ToDateTime(null) };
-                else
+                try
                 {
-                    try
+                    if (check_black_list(pair.Key, black_list) == true)
                     {
-                        row.ItemArray = new object[] { pair.Key, Convert.ToDateTime(pair.Value) };
+                        if (pair.Value == "null") row.ItemArray = new object[] { pair.Key, Convert.ToDateTime(null) };
+                        else
+                        {
+                            row.ItemArray = new object[] { pair.Key, Convert.ToDateTime(pair.Value) };
+                        }
+                        dt.Rows.Add(row);                        
                     }
-                    catch
+                    else
                     {
-                        row.ItemArray = new object[] { pair.Key, Convert.ToDateTime(null) };
+                        if (pair.Value == "null") row.ItemArray = new object[] { pair.Key, Convert.ToDateTime(null) };
+                        else
+                        {
+                            row.ItemArray = new object[] { pair.Key, Convert.ToDateTime(pair.Value) };
+                        }
+                        dt.Rows.Add(row);
                     }
-                }
-                dt.Rows.Add(row);
-            }
-            dataGridView.DataSource = dt;
-            dataGridView.ClearSelection();
-            dataGridView.EnableHeadersVisualStyles = false;
-            //dataGridView.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(107, 210, 242);
-            dataGridView.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(255, 255, 255);
-            dataGridView.ColumnHeadersDefaultCellStyle.Font = new Font("Century Gothic", 8); 
+                }                
+                catch
+                {
+                    row.ItemArray = new object[] { pair.Key, Convert.ToDateTime(null) };
+                    dt.Rows.Add(row);
+                }                         
+            }         
+            dataGridView.DataSource = dt;            
+            //dataGridView.EnableHeadersVisualStyles = false;            
+            dataGridView.ColumnHeadersDefaultCellStyle.Font = new Font("Century Gothic", 8);            
         }
+        
+        //выделяет красным, если чс
+        private void dataGridView_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
+        {
+            for (int i = 0; i < dataGridView.RowCount - 1; i++)
+            {                
+                if (black_list.ContainsKey(dataGridView.Rows[i].Cells[0].Value.ToString()) == true) dataGridView.Rows[i].DefaultCellStyle.ForeColor = Color.Red;
+                else dataGridView.Rows[i].DefaultCellStyle.BackColor = Color.White;
+            }
+        }
+        
+        //убирает выделение
+        private void dataGridView_SelectionChanged(object sender, EventArgs e)
+        {
+            //dataGridView.Rows[0].Cells[0].Selected = false;
+            dataGridView.ClearSelection();
+            //try
+            //{
+            //    ((DataGridView)sender).SelectedCells[0].Selected = true;
+            //}
+            //catch { }
+        }
+
+        void cout_bl(Dictionary<string, string> black_list)
+        {            
+            dataGridView_black_list.ColumnCount = 2;
+            dataGridView_black_list.EnableHeadersVisualStyles = false;            
+            dataGridView_black_list.ColumnHeadersDefaultCellStyle.Font = new Font("Century Gothic", 8);
+            dataGridView_black_list.Rows.Clear();
+            foreach (string iter in black_list.Keys) dataGridView_black_list.Rows.Add(iter, "unistall");            
+        }        
 
         public static Bitmap get_picture_current_user(string name)
         {
@@ -367,12 +472,115 @@ namespace list_soft_metro
             var ms = new MemoryStream(imageBytes);
             var bitmapImage = new Bitmap(ms);
             return bitmapImage;
+        }                  
+
+        private void textBox_search_TextChanged(object sender, EventArgs e)
+        {
+            (dataGridView.DataSource as DataTable).DefaultView.RowFilter = String.Format("Name like '{0}%'", textBox_search.Text);
+        }              
+
+        static private bool check_black_list(string name_soft, string[] mass)
+        {
+            bool result = false;
+            foreach (var i in mass)
+            {
+                if (name_soft.IndexOf(i, StringComparison.CurrentCultureIgnoreCase) > -1)
+                {
+                    // Вхождения найдены
+                    result = true;
+                    break;
+                }
+                else
+                {
+                    // Вхождения не найдены
+                   result = false;
+                }
+            }
+            return result;
         }
 
-        private void dataGridView_Click(object sender, EventArgs e)
+        private string[] generate_black_list()
         {
-            dataGridView.DefaultCellStyle.SelectionBackColor = Color.WhiteSmoke;
-            dataGridView.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            FileStream fstream = File.OpenRead(@"..\..\..\black_list.txt");           
+            byte[] array = new byte[fstream.Length]; // преобразуем строку в байты            
+            fstream.Read(array, 0, array.Length); // считываем данные            
+            string textFromFile = System.Text.Encoding.Default.GetString(array); // декодируем байты в строку
+            fstream.Close();
+            //string[] stringSeparators = new string[] { "\r\n" };
+            string[] result = textFromFile.Split(new[] {Environment.NewLine}, StringSplitOptions.RemoveEmptyEntries);            
+            return result;
+        }
+
+        private void button_update_Click(object sender, EventArgs e)
+        {
+            update_black_list();
+        }
+        private void update_black_list()
+        {
+            string text = null;
+            for (int i = 0; i < dataGridView_black_list.RowCount; i++)
+            {
+                if (dataGridView_black_list.RowCount - 1 == 0) { text = Environment.NewLine; break; } //если пустая
+                else
+                {
+                    if (i == dataGridView_black_list.RowCount - 2) { text += dataGridView_black_list.Rows[i].Cells[0].Value.ToString() + Environment.NewLine; break; } //если 1
+                    else text += dataGridView_black_list.Rows[i].Cells[0].Value.ToString() + Environment.NewLine; // если больше 1
+                }
+            }
+            FileStream fstream = new FileStream(@"..\..\..\black_list.txt", FileMode.Truncate);
+            byte[] array = System.Text.Encoding.Default.GetBytes(text); // преобразуем строку в байты                                                                           
+            fstream.Write(array, 0, array.Length);  // запись массива байтов в файл
+            fstream.Close();
+            MessageBox.Show("Черный список обновлен.", "Обновление!", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            Regedit();
+        }
+
+        private void dataGridView_black_list_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.ColumnIndex == 1 && e.RowIndex < dataGridView_black_list.RowCount - 1)
+            {
+                string name = dataGridView_black_list.Rows[(e.RowIndex)].Cells[0].Value.ToString();
+                var result = MessageBox.Show("Удаление " + name + " программы. Если выберите Ок, то запуститься деинсталяционный файл. " + Environment.NewLine + "Внимание! После удаления нажмите кнопку update.", "Удаление!", MessageBoxButtons.YesNo, MessageBoxIcon.Information);
+                
+                if (result == DialogResult.Yes)
+                {
+                    string command = black_list[name];                    
+                    if (command == "null") MessageBox.Show("Для " + name + " не было найдено деинсталяционного файла.", "Отмена удаления!", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    else
+                    {
+                        run_unistall(command);                      
+                        //dataGridView_black_list.Rows.RemoveAt(e.RowIndex);
+                        //update_black_list();
+                    }                                                  
+                }
+            }
+        }
+
+        private void run_unistall(string command)
+        {
+            string s = string.Format("{0}{1}{0}", '"', command);
+            ProcessStartInfo procStartInfo = new ProcessStartInfo("cmd", "/c " + s);
+            procStartInfo.CreateNoWindow = true;
+            procStartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+            Process cmd = new Process();
+            cmd.StartInfo = procStartInfo;            
+            cmd.StartInfo = procStartInfo;
+            try
+            {
+                cmd.Start();
+                cmd.WaitForExit();  // ждем завершения процеса cmd 
+            }
+            catch
+            {
+                MessageBox.Show("Процесс " + command + " запустить не удалось.", "Ошибка удаления!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }                       
+        }
+
+        private void button_main_Click(object sender, EventArgs e)
+        {
+            panel_main.Visible = true;
+            panel_information.Visible = false;
+            panel_admin.Visible = false;
         }
 
         private void button_info_Click(object sender, EventArgs e)
@@ -383,23 +591,19 @@ namespace list_soft_metro
 Кнопка 'main' вернет Вас в главное меню. Некоторые моменты:
     -если столбец даты пуст, то это значит, что в реестре не нашлось информации, которую можно было бы использовать;
     -если каких - то веток реестра нет, то программа будет исправно работать с тем, что есть;
-    -если все необходимые ветки реестра отсутствуют, то это странно, поэтому напишите на почту example @gmail.com.";            
-            textBox_info.Visible = true;
-            panel_search.Visible = false;
-            panel_info.Visible = false;
+    -если все необходимые ветки реестра отсутствуют, то это странно, поэтому напишите на почту example @gmail.com.";
+            
             textBox_info.Text = info;
-        }           
-
-        private void textBox_search_TextChanged(object sender, EventArgs e)
-        {
-            (dataGridView.DataSource as DataTable).DefaultView.RowFilter = String.Format("Name like '{0}%'", textBox_search.Text);
+            panel_main.Visible = false;
+            panel_information.Visible = true;
+            panel_admin.Visible = false;
         }
 
-        private void button_main_Click(object sender, EventArgs e)
+        private void button_admin_Click(object sender, EventArgs e)
         {
-            textBox_info.Visible = false;
-            panel_search.Visible = true;
-            panel_info.Visible = true;
-        }
+            panel_main.Visible = false;
+            panel_information.Visible = false;
+            panel_admin.Visible = true;
+        }                
     }
 }

@@ -1,0 +1,11 @@
+D:\study\list soft\list soft metro\list soft metro\bin\Release\list soft metro.exe.config
+D:\study\list soft\list soft metro\list soft metro\bin\Release\list soft metro.exe
+D:\study\list soft\list soft metro\list soft metro\bin\Release\list soft metro.pdb
+D:\study\list soft\list soft metro\list soft metro\bin\Release\MetroFramework.dll
+D:\study\list soft\list soft metro\list soft metro\bin\Release\MetroFramework.Fonts.dll
+D:\study\list soft\list soft metro\list soft metro\obj\Release\list_soft_metro.FormMain.resources
+D:\study\list soft\list soft metro\list soft metro\obj\Release\list_soft_metro.Properties.Resources.resources
+D:\study\list soft\list soft metro\list soft metro\obj\Release\list soft metro.csproj.GenerateResource.Cache
+D:\study\list soft\list soft metro\list soft metro\obj\Release\list soft metro.exe
+D:\study\list soft\list soft metro\list soft metro\obj\Release\list soft metro.pdb
+D:\study\list soft\list soft metro\list soft metro\obj\Release\list soft metro.csprojResolveAssemblyReference.cache

@@ -1,0 +1,22 @@
+D:\study\list soft\list soft metro\list soft metro\bin\Debug\list soft metro.exe.config
+D:\study\list soft\list soft metro\list soft metro\bin\Debug\list soft metro.exe
+D:\study\list soft\list soft metro\list soft metro\bin\Debug\list soft metro.pdb
+D:\study\list soft\list soft metro\list soft metro\bin\Debug\MetroFramework.dll
+D:\study\list soft\list soft metro\list soft metro\bin\Debug\MetroFramework.Fonts.dll
+D:\study\list soft\list soft metro\list soft metro\obj\Debug\list_soft_metro.Properties.Resources.resources
+D:\study\list soft\list soft metro\list soft metro\obj\Debug\list soft metro.csproj.GenerateResource.Cache
+D:\study\list soft\list soft metro\list soft metro\obj\Debug\list soft metro.exe
+D:\study\list soft\list soft metro\list soft metro\obj\Debug\list soft metro.pdb
+D:\study\list soft\list soft metro\list soft metro\obj\Debug\list_soft_metro.FormMain.resources
+D:\study\list soft\list soft metro\list soft metro\obj\Debug\list soft metro.csprojResolveAssemblyReference.cache
+E:\list soft metro\list soft metro\bin\Debug\list soft metro.exe.config
+E:\list soft metro\list soft metro\obj\Debug\list soft metro.exe
+E:\list soft metro\list soft metro\obj\Debug\list soft metro.pdb
+E:\list soft metro\list soft metro\bin\Debug\list soft metro.exe
+E:\list soft metro\list soft metro\bin\Debug\list soft metro.pdb
+E:\list soft metro\list soft metro\bin\Debug\MetroFramework.dll
+E:\list soft metro\list soft metro\bin\Debug\MetroFramework.Fonts.dll
+E:\list soft metro\list soft metro\obj\Debug\list soft metro.csprojResolveAssemblyReference.cache
+E:\list soft metro\list soft metro\obj\Debug\list_soft_metro.FormMain.resources
+E:\list soft metro\list soft metro\obj\Debug\list_soft_metro.Properties.Resources.resources
+E:\list soft metro\list soft metro\obj\Debug\list soft metro.csproj.GenerateResource.Cache

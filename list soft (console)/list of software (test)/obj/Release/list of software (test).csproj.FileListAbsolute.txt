@@ -1,0 +1,6 @@
+D:\study\list soft\list of software (test)\list of software (test)\bin\Release\list of software (test).exe.config
+D:\study\list soft\list of software (test)\list of software (test)\bin\Release\list of software (test).exe
+D:\study\list soft\list of software (test)\list of software (test)\bin\Release\list of software (test).pdb
+D:\study\list soft\list of software (test)\list of software (test)\obj\Release\list of software (test).csprojResolveAssemblyReference.cache
+D:\study\list soft\list of software (test)\list of software (test)\obj\Release\list of software (test).exe
+D:\study\list soft\list of software (test)\list of software (test)\obj\Release\list of software (test).pdb
